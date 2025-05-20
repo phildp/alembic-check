@@ -1,0 +1,84 @@
+[project]
+name = "alembic-check"
+version = "0.1.0"
+description = "A pre-commit hook for Alembic migration tool that ensures database migration integrity and best practices"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [{ name = "Filippos Pavlopoulos", email = "philpavlop@gmail.com" }]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.0.0",
+    "python-semantic-release>=8.0.0",
+    "black>=24.0.0",
+]
+
+[tool.semantic_release]
+version_variable = ["pyproject.toml:version"]
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+commit_message = "{version}\n\n{changelog}"
+changelog_sections = ["feature", "fix", "breaking"]
+changelog_exclude_commit_patterns = ["^chore:", "^docs:", "^test:", "^ci:"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = [
+    "A001",
+    "PLW0406",
+    "F404",
+    "PLE0604",
+    "F822",
+    "B023",
+    "PLW0602",
+    "PLW0603",
+    "W605",
+    "F701",
+    "F702",
+    "PLE0116",
+    "PLE0101",
+    "F622",
+    "F706",
+    "B002",
+    "F704",
+    "PLE0117",
+    "B012",
+    "F631",
+    "B006",
+    "F601",
+    "PLW0120",
+    "B018",
+    "S102",
+    "B018",
+    "F502",
+    "F501",
+    "F524",
+    "F506",
+    "F524",
+    "PLE1310",
+    "F522",
+    "F525",
+    "F524",
+    "E703",
+    "PLE1206",
+    "PLE1205",
+    "F901",
+    "B014",
+    "PLW0711",
+    "E722",
+    "PLE1700",
+]
+ignore = []
+
+[tool.ruff.isort]
+known-first-party = ["alembic_check"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=alembic_check --cov-report=term-missing"
