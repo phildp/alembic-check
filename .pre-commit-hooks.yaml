@@ -1,6 +1,6 @@
 - id: alembic-check
   name: Check Alembic migration tool
   description: A pre-commit hook for Alembic migration tool that ensures database migration integrity and best practices
-  entry: alembic-check
+  entry: python -m alembic_check.check_migrations
   language: python
   types: [python]

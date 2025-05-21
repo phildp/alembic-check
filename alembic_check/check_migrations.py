@@ -7,7 +7,7 @@ It parses each migration file to extract the revision and down_revision,
 and then checks for any down_revision values that appear more than once.
 
 Usage:
-    alembic-check <migrations_directory>
+    python -m alembic_check.check_migrations <migrations_directory>
 """
 
 import re
@@ -192,14 +192,18 @@ def run_checks(migrations_dir: str) -> int:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
+    args = (
+        sys.argv[3:] if sys.argv[0] == "python" and "-m" in sys.argv else sys.argv[1:]
+    )
+
+    if len(args) != 1:
         print(
-            "Usage: alembic-check <migrations_directory>",
+            "Usage: python -m alembic_check.check_migrations <migrations_directory>",
             file=sys.stderr,
         )
         return 1
 
-    return run_checks(sys.argv[1])
+    return run_checks(args[0])
 
 
 if __name__ == "__main__":
