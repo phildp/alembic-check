@@ -4,3 +4,5 @@
   entry: python -m alembic_check.check_migrations
   language: python
   types: [python]
+  require_serial: true
+  args: ["${1}"]  # This tells pre-commit to pass the first argument through
