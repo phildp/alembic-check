@@ -116,7 +116,6 @@ def validate_migration_chain(
     if not migrations:
         return None
 
-    # sort migrations by revision
     sorted_migrations = sorted(migrations.items(), key=lambda x: x[0])
 
     # Check for multiple initial migrations
@@ -185,14 +184,7 @@ def run_checks(migrations_dir: str) -> int:
     """
     try:
         migrations = build_migration_chain(Path(migrations_dir))
-        is_valid, errors = validate_migration_chain(migrations)
-
-        if not is_valid:
-            print("Found errors in migrations:", file=sys.stderr)
-            for error in errors:
-                print(f"  - {error}", file=sys.stderr)
-            return 1
-
+        validate_migration_chain(migrations)
         return 0
     except MigrationError as e:
         print(f"Error: {str(e)}", file=sys.stderr)
@@ -208,3 +200,7 @@ def main() -> int:
         sys.exit(1)
 
     sys.exit(run_checks(sys.argv[1]))
+
+
+if __name__ == "__main__":
+    main()

@@ -50,3 +50,5 @@ node_modules/
 
 # Semantic Release
 release.config.js
+
+test_cli/

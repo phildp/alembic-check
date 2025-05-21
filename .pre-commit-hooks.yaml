@@ -4,4 +4,4 @@
   entry: alembic-check
   language: python
   types: [python]
-  additional_dependencies: [alembic>=1.12.0] 
+  args: ["YOUR_MIGRATIONS_DIRECTORY"]
