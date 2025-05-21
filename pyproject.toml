@@ -16,9 +16,6 @@ dev = [
     "black>=24.0.0",
 ]
 
-[project.scripts]
-alembic-check = "alembic_check.check_migrations:main"
-
 [tool.semantic_release]
 version_variable = ["pyproject.toml:version"]
 branch = "main"

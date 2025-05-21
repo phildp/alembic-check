@@ -5,10 +5,9 @@ help: ## Display this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 venv: ## Create a virtual environment and install dependencies
-	python -m pip install --upgrade pip
-	pip install uv==0.7.6
-	uv venv
-	uv pip install -e ".[dev]"
+	pip3 install --upgrade pip
+	pip3 install uv==0.7.6
+	uv sync
 
 test: venv ## Run tests
 	uv run pytest ${args} --cov=alembic_check --cov-report=xml 
