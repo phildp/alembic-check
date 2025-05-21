@@ -3,7 +3,7 @@
 [![codecov](https://codecov.io/gh/phildp/alembic-check/branch/main/graph/badge.svg)](https://codecov.io/gh/phildp/alembic-check)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-A pre-commit hook for Alembic migration tool that ensures database migration integrity and best practices.
+A pre-commit hook for the Alembic migration tool that ensures database migration integrity and best practices.
 
 ## Features
 
@@ -34,7 +34,3 @@ make test
 # Run linting
 make pre-commit
 ```
-
-## License
-
-MIT
