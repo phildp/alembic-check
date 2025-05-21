@@ -28,14 +28,11 @@ repos:
 ## Development
 
 ```bash
-# Install development dependencies
-uv pip install -e ".[dev]"
-
 # Run tests
-pytest
+make test
 
 # Run linting
-ruff check .
+make pre-commit
 ```
 
 ## License
