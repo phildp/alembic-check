@@ -192,10 +192,11 @@ def run_checks(migrations_dir: str) -> int:
 
 
 def main() -> int:
+    print(f"sys.argv: {sys.argv}")
     args = (
         sys.argv[3:] if sys.argv[0] == "python" and "-m" in sys.argv else sys.argv[1:]
     )
-
+    print(f"args: {args}")
     if len(args) != 1:
         print(
             "Usage: python -m alembic_check.check_migrations <migrations_directory>",
