@@ -223,7 +223,6 @@ def main() -> int:
     staged_files = args[1:]
 
     if staged_files and not has_migration_changes(staged_files, migrations_dir):
-        print("No migration files are staged, skipping check.")
         return 0
 
     return run_checks(migrations_dir)
