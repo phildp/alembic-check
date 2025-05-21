@@ -13,7 +13,7 @@ Usage:
 import re
 import sys
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 from alembic_check.exceptions import (
     CircularDependencyError,
@@ -191,20 +191,42 @@ def run_checks(migrations_dir: str) -> int:
         return 1
 
 
+def has_migration_changes(staged_files: List[str], migrations_dir: str) -> bool:
+    """
+    Check if any staged files are in the migrations directory.
+
+    :param staged_files: List of staged file paths.
+    :param migrations_dir: Path to the migrations directory.
+
+    :return: True if any staged files are in the migrations directory, False otherwise.
+    """
+    migrations_path = Path(migrations_dir)
+    return any(
+        migrations_path in Path(f).parents or migrations_path == Path(f)
+        for f in staged_files
+    )
+
+
 def main() -> int:
-    print(f"sys.argv: {sys.argv}")
     args = (
         sys.argv[3:] if sys.argv[0] == "python" and "-m" in sys.argv else sys.argv[1:]
     )
-    print(f"args: {args}")
-    if len(args) != 1:
+
+    if len(args) < 1:
         print(
-            "Usage: python -m alembic_check.check_migrations <migrations_directory>",
+            "Usage: python -m alembic_check.check_migrations <migrations_directory> [staged_files...]",
             file=sys.stderr,
         )
         return 1
 
-    return run_checks(args[0])
+    migrations_dir = args[0]
+    staged_files = args[1:]
+
+    if staged_files and not has_migration_changes(staged_files, migrations_dir):
+        print("No migration files are staged, skipping check.")
+        return 0
+
+    return run_checks(migrations_dir)
 
 
 if __name__ == "__main__":

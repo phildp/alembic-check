@@ -9,8 +9,8 @@ from alembic_check.check_migrations import (
     build_migration_chain,
     read_migration_file,
     validate_migration_chain,
-    run_checks,
     main,
+    has_migration_changes,
 )
 from alembic_check.exceptions import (
     CircularDependencyError,
@@ -304,6 +304,13 @@ def test_main(mock_argv: Mock, mock_validate: Mock, mock_build: Mock) -> None:
             "validate_raises": None,
             "expected": 1,
         },
+        {
+            "name": "staged files but none in migrations",
+            "argv": ["alembic-check", "migrations/", "src/file.py", "tests/test.py"],
+            "build_return": None,
+            "validate_raises": None,
+            "expected": 0,
+        },
     ]
 
     for case in test_cases:
@@ -323,3 +330,67 @@ def test_main(mock_argv: Mock, mock_validate: Mock, mock_build: Mock) -> None:
 
         # when/then
         assert main() == case["expected"], f"Failed test case: {case['name']}"
+
+
+def test_has_migration_changes():
+    test_cases = [
+        {
+            "name": "no staged files",
+            "staged_files": [],
+            "migrations_dir": "migrations",
+            "expected": False,
+        },
+        {
+            "name": "staged file in migrations directory",
+            "staged_files": ["migrations/001_initial.py"],
+            "migrations_dir": "migrations",
+            "expected": True,
+        },
+        {
+            "name": "staged file in subdirectory of migrations",
+            "staged_files": ["migrations/subdir/file.py"],
+            "migrations_dir": "migrations",
+            "expected": True,
+        },
+        {
+            "name": "migrations directory itself is staged",
+            "staged_files": ["migrations"],
+            "migrations_dir": "migrations",
+            "expected": True,
+        },
+        {
+            "name": "multiple files, one in migrations",
+            "staged_files": [
+                "src/file.py",
+                "migrations/001_initial.py",
+                "tests/test.py",
+            ],
+            "migrations_dir": "migrations",
+            "expected": True,
+        },
+        {
+            "name": "no files in migrations directory",
+            "staged_files": ["src/file.py", "tests/test.py"],
+            "migrations_dir": "migrations",
+            "expected": False,
+        },
+        {
+            "name": "staged file with same name as migrations directory",
+            "staged_files": ["src/migrations.py"],
+            "migrations_dir": "migrations",
+            "expected": False,
+        },
+        {
+            "name": "staged file in parent directory of migrations",
+            "staged_files": ["../migrations/001_initial.py"],
+            "migrations_dir": "migrations",
+            "expected": False,
+        },
+    ]
+
+    for case in test_cases:
+        # when
+        result = has_migration_changes(case["staged_files"], case["migrations_dir"])
+
+        # then
+        assert result == case["expected"], f"Failed test case: {case['name']}"
