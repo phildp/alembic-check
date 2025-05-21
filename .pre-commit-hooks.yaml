@@ -1,7 +1,7 @@
--   id: alembic-check-revisions
+-   id: alembic-check
     name: Check Alembic migration revisions
     description: Validates that all Alembic migration files have unique down_revision values
-    entry: alembic-pre-commit
+    entry: alembic-check
     language: python
     types: [python]
     additional_dependencies: [alembic>=1.12.0] 
