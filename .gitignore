@@ -44,3 +44,9 @@ build/
 
 # Coverage
 coverage.xml
+
+# Node
+node_modules/
+
+# Semantic Release
+release.config.js
