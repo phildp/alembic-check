@@ -10,6 +10,7 @@ from alembic_check.check_migrations import (
     read_migration_file,
     validate_migration_chain,
     run_checks,
+    main,
 )
 from alembic_check.exceptions import (
     CircularDependencyError,
@@ -263,39 +264,62 @@ def test_validate_migration_chain() -> None:
 
 @patch("alembic_check.check_migrations.build_migration_chain")
 @patch("alembic_check.check_migrations.validate_migration_chain")
-def test_run_checks(mock_validate: Mock, mock_build: Mock) -> None:
+@patch("sys.argv")
+def test_main(mock_argv: Mock, mock_validate: Mock, mock_build: Mock) -> None:
     test_cases = [
         {
-            "name": "successful validation",
+            "name": "successful validation - direct script",
+            "argv": ["check_migrations.py", "migrations/"],
             "build_return": {"1a2b3c4d5e6f": None, "2b3c4d5e6f7g": "1a2b3c4d5e6f"},
-            "validate_return": (True, []),
+            "validate_raises": None,
+            "expected": 0,
+        },
+        {
+            "name": "successful validation - pre-commit",
+            "argv": ["alembic-check", "migrations/"],
+            "build_return": {"1a2b3c4d5e6f": None, "2b3c4d5e6f7g": "1a2b3c4d5e6f"},
+            "validate_raises": None,
             "expected": 0,
         },
         {
             "name": "failed validation",
+            "argv": ["check_migrations.py", "migrations/"],
             "build_return": {"1a2b3c4d5e6f": None, "2b3c4d5e6f7g": "1a2b3c4d5e6f"},
-            "validate_return": (False, ["Error message"]),
+            "validate_raises": MultipleInitialMigrationsError(
+                "Multiple initial migrations found"
+            ),
             "expected": 1,
         },
         {
             "name": "build error",
+            "argv": ["check_migrations.py", "migrations/"],
             "build_return": MigrationFileError("Directory not found"),
-            "validate_return": None,
+            "validate_raises": None,
+            "expected": 1,
+        },
+        {
+            "name": "missing argument",
+            "argv": ["check_migrations.py"],
+            "build_return": None,
+            "validate_raises": None,
             "expected": 1,
         },
     ]
 
     for case in test_cases:
         # given
+        mock_argv.__getitem__.side_effect = case["argv"].__getitem__
+        mock_argv.__len__.return_value = len(case["argv"])
+
         if isinstance(case["build_return"], Exception):
             mock_build.side_effect = case["build_return"]
         else:
             mock_build.return_value = case["build_return"]
 
-        if case["validate_return"] is not None:
-            mock_validate.return_value = case["validate_return"]
+        if case["validate_raises"] is not None:
+            mock_validate.side_effect = case["validate_raises"]
+        else:
+            mock_validate.side_effect = None
 
         # when/then
-        assert (
-            run_checks("migrations/") == case["expected"]
-        ), f"Failed test case: {case['name']}"
+        assert main() == case["expected"], f"Failed test case: {case['name']}"

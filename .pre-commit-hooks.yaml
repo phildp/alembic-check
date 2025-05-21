@@ -4,4 +4,3 @@
   entry: alembic-check
   language: python
   types: [python]
-  args: ["YOUR_MIGRATIONS_DIRECTORY"]
