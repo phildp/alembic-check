@@ -2,19 +2,13 @@
 name = "alembic-check"
 version = "0.1.0"
 description = "A pre-commit hook for Alembic migration tool that ensures database migration integrity and best practices"
-requires-python = ">=3.8"
-license = "MIT"
+requires-python = ">=3.9"
+license = { text = "MIT" }
 authors = [{ name = "Filippos Pavlopoulos", email = "philpavlop@gmail.com" }]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "ruff>=0.1.0",
-    "pre-commit>=3.0.0",
-    "python-semantic-release>=8.0.0",
-    "black>=24.0.0",
-]
+[dependency-groups]
+dev = ["pytest>=8.3.5", "pytest-cov>=6.1.1"]
+lint = ["pre-commit>=4.2.0", "black>=25.1.0", "ruff>=0.11.10"]
 
 [tool.semantic_release]
 version_variable = ["pyproject.toml:version"]
