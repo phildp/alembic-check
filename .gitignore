@@ -52,3 +52,4 @@ node_modules/
 release.config.js
 
 test_cli/
+test_no_revisions/

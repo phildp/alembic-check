@@ -1,21 +1,25 @@
 """Tests for the migration validation logic."""
 
+from io import StringIO
 from pathlib import Path
-from unittest.mock import patch, Mock
+import sys
 
 import pytest
+from unittest.mock import Mock, patch
 
 from alembic_check.check_migrations import (
     build_migration_chain,
-    read_migration_file,
-    validate_migration_chain,
-    main,
     has_migration_changes,
+    main,
+    read_migration_file,
+    run_checks,
+    validate_migration_chain,
 )
 from alembic_check.exceptions import (
     CircularDependencyError,
     DuplicateDownRevisionError,
     DuplicateRevisionError,
+    MigrationError,
     MigrationFileError,
     MissingDownRevisionError,
     MultipleInitialMigrationsError,
@@ -166,15 +170,6 @@ down_revision = '3c4d5e6f7g8h'
         build_migration_chain(directory)
 
 
-def test_build_migration_chain_missing_directory() -> None:
-    # given
-    directory = Path("/nonexistent")
-
-    # when/then
-    with pytest.raises(MigrationFileError, match="Migrations directory not found"):
-        build_migration_chain(directory)
-
-
 def test_build_migration_chain_malformed_file(tmp_path: Path) -> None:
     # given
     directory = tmp_path / "malformed"
@@ -262,100 +257,30 @@ def test_validate_migration_chain() -> None:
             assert res is None, f"Failed test case: {case['name']}"
 
 
-@patch("alembic_check.check_migrations.build_migration_chain")
-@patch("alembic_check.check_migrations.validate_migration_chain")
-@patch("sys.argv")
-def test_main(mock_argv: Mock, mock_validate: Mock, mock_build: Mock) -> None:
-    test_cases = [
-        {
-            "name": "successful validation - direct script",
-            "argv": ["check_migrations.py", "migrations/"],
-            "build_return": {"1a2b3c4d5e6f": None, "2b3c4d5e6f7g": "1a2b3c4d5e6f"},
-            "validate_raises": None,
-            "expected": 0,
-        },
-        {
-            "name": "successful validation - pre-commit",
-            "argv": ["alembic-check", "migrations/"],
-            "build_return": {"1a2b3c4d5e6f": None, "2b3c4d5e6f7g": "1a2b3c4d5e6f"},
-            "validate_raises": None,
-            "expected": 0,
-        },
-        {
-            "name": "failed validation",
-            "argv": ["check_migrations.py", "migrations/"],
-            "build_return": {"1a2b3c4d5e6f": None, "2b3c4d5e6f7g": "1a2b3c4d5e6f"},
-            "validate_raises": MultipleInitialMigrationsError(
-                "Multiple initial migrations found"
-            ),
-            "expected": 1,
-        },
-        {
-            "name": "build error",
-            "argv": ["check_migrations.py", "migrations/"],
-            "build_return": MigrationFileError("Directory not found"),
-            "validate_raises": None,
-            "expected": 1,
-        },
-        {
-            "name": "missing argument",
-            "argv": ["check_migrations.py"],
-            "build_return": None,
-            "validate_raises": None,
-            "expected": 1,
-        },
-        {
-            "name": "staged files but none in migrations",
-            "argv": ["alembic-check", "migrations/", "src/file.py", "tests/test.py"],
-            "build_return": None,
-            "validate_raises": None,
-            "expected": 0,
-        },
-    ]
-
-    for case in test_cases:
-        # given
-        mock_argv.__getitem__.side_effect = case["argv"].__getitem__
-        mock_argv.__len__.return_value = len(case["argv"])
-
-        if isinstance(case["build_return"], Exception):
-            mock_build.side_effect = case["build_return"]
-        else:
-            mock_build.return_value = case["build_return"]
-
-        if case["validate_raises"] is not None:
-            mock_validate.side_effect = case["validate_raises"]
-        else:
-            mock_validate.side_effect = None
-
-        # when/then
-        assert main() == case["expected"], f"Failed test case: {case['name']}"
-
-
 def test_has_migration_changes():
     test_cases = [
         {
             "name": "no staged files",
             "staged_files": [],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": False,
         },
         {
             "name": "staged file in migrations directory",
             "staged_files": ["migrations/001_initial.py"],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": True,
         },
         {
             "name": "staged file in subdirectory of migrations",
             "staged_files": ["migrations/subdir/file.py"],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": True,
         },
         {
             "name": "migrations directory itself is staged",
             "staged_files": ["migrations"],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": True,
         },
         {
@@ -365,25 +290,25 @@ def test_has_migration_changes():
                 "migrations/001_initial.py",
                 "tests/test.py",
             ],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": True,
         },
         {
             "name": "no files in migrations directory",
             "staged_files": ["src/file.py", "tests/test.py"],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": False,
         },
         {
             "name": "staged file with same name as migrations directory",
             "staged_files": ["src/migrations.py"],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": False,
         },
         {
             "name": "staged file in parent directory of migrations",
             "staged_files": ["../migrations/001_initial.py"],
-            "migrations_dir": "migrations",
+            "migrations_dir": Path("migrations"),
             "expected": False,
         },
     ]
@@ -394,3 +319,81 @@ def test_has_migration_changes():
 
         # then
         assert result == case["expected"], f"Failed test case: {case['name']}"
+
+
+def test_no_revisions_only_init(tmp_path: Path) -> None:
+    # given
+    directory = tmp_path / "no_revisions_only_init"
+    directory.mkdir()
+
+    (directory / "__init__.py").write_text(
+        """
+# revision identifiers, used by Alembic.
+# empty file
+"""
+    )
+
+    # when/then
+    with pytest.raises(
+        MigrationFileError, match="No migration files found in the migrations directory"
+    ):
+        build_migration_chain(directory)
+
+
+def test_no_revisions_only_empty_files(tmp_path: Path) -> None:
+    # given
+    directory = tmp_path / "no_revisions_only_empty_files"
+    directory.mkdir()
+
+    (directory / "empty.py").write_text(
+        """
+# empty file
+"""
+    )
+    # when/then
+    with pytest.raises(MigrationFileError, match="Could not find revision in empty.py"):
+        build_migration_chain(directory)
+
+
+def test_run_checks_directory_not_found() -> None:
+    # given
+    directory = Path("/nonexistent")
+    argv = ["alembic-check", str(directory)]
+
+    # when/then
+    with patch.object(sys, "argv", argv):
+        with patch("sys.stderr", new=StringIO()) as mock_stderr:
+            assert main() == 1
+            assert "Migrations directory does not exist" in mock_stderr.getvalue()
+
+
+@patch("alembic_check.check_migrations.validate_migration_chain")
+@patch("alembic_check.check_migrations.build_migration_chain")
+def test_run_checks(
+    mock_build_migration_chain: Mock, mock_validate_migration_chain: Mock
+) -> None:
+    # given
+    directory = Path("migrations")
+    mock_build_migration_chain.return_value = {
+        "1a2b3c4d5e6f": None,
+        "2b3c4d5e6f7g": "1a2b3c4d5e6f",
+    }
+    mock_validate_migration_chain.return_value = None
+    # when/then
+    assert run_checks(directory) == 0
+
+
+@patch("alembic_check.check_migrations.validate_migration_chain")
+@patch("alembic_check.check_migrations.build_migration_chain")
+def test_run_checks_error(
+    mock_build_migration_chain: Mock, mock_validate_migration_chain: Mock
+) -> None:
+    # given
+    directory = Path("migrations")
+    mock_build_migration_chain.side_effect = MigrationError("Test error")
+    mock_validate_migration_chain.return_value = None
+    # when/then
+    with patch("sys.stderr", new=StringIO()) as mock_stderr:
+        assert run_checks(directory) == 1
+        assert "Error: Test error" in mock_stderr.getvalue()
+    assert run_checks(directory) == 1
