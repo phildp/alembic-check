@@ -74,12 +74,12 @@ def build_migration_chain(migrations_dir: Path) -> Dict[str, Optional[str]]:
     :raises: MigrationFileError: If the migrations directory doesn't exist or if any file is malformed.
     :raises: DuplicateRevisionError: If duplicate revisions are found.
     """
-    if not migrations_dir.exists():
-        raise MigrationFileError(f"Migrations directory not found: {migrations_dir}")
-
     migrations: Dict[str, Optional[str]] = {}
 
     for file_path in migrations_dir.glob("*.py"):
+        if file_path.name == "__init__.py":
+            continue
+
         try:
             revision, down_revision = read_migration_file(file_path)
 
@@ -94,6 +94,11 @@ def build_migration_chain(migrations_dir: Path) -> Dict[str, Optional[str]]:
             migrations[revision] = down_revision
         except MigrationFileError:
             raise
+
+    if not migrations:
+        raise MigrationFileError(
+            f"No migration files found in the migrations directory: {migrations_dir}"
+        )
 
     return migrations
 
@@ -174,7 +179,7 @@ def validate_migration_chain(
     return None
 
 
-def run_checks(migrations_dir: str) -> int:
+def run_checks(migrations_dir: Path) -> int:
     """
     Checks migration files in the given directory.
 
@@ -183,7 +188,7 @@ def run_checks(migrations_dir: str) -> int:
     :return: 0 if all migrations are valid, 1 if there are any errors.
     """
     try:
-        migrations = build_migration_chain(Path(migrations_dir))
+        migrations = build_migration_chain(migrations_dir)
         validate_migration_chain(migrations)
         return 0
     except MigrationError as e:
@@ -191,7 +196,7 @@ def run_checks(migrations_dir: str) -> int:
         return 1
 
 
-def has_migration_changes(staged_files: List[str], migrations_dir: str) -> bool:
+def has_migration_changes(staged_files: List[str], migrations_dir: Path) -> bool:
     """
     Check if any staged files are in the migrations directory.
 
@@ -200,17 +205,14 @@ def has_migration_changes(staged_files: List[str], migrations_dir: str) -> bool:
 
     :return: True if any staged files are in the migrations directory, False otherwise.
     """
-    migrations_path = Path(migrations_dir)
     return any(
-        migrations_path in Path(f).parents or migrations_path == Path(f)
+        migrations_dir in Path(f).parents or migrations_dir == Path(f)
         for f in staged_files
     )
 
 
-def main() -> int:
-    args = (
-        sys.argv[3:] if sys.argv[0] == "python" and "-m" in sys.argv else sys.argv[1:]
-    )
+def main() -> int:  # pragma: no cover
+    args = sys.argv[1:]
 
     if len(args) < 1:
         print(
@@ -219,10 +221,14 @@ def main() -> int:
         )
         return 1
 
-    migrations_dir = args[0]
+    migrations_dir = Path(args[0])
     staged_files = args[1:]
 
-    if staged_files and not has_migration_changes(staged_files, migrations_dir):
+    if not migrations_dir.exists():
+        print(f"Migrations directory not found: {migrations_dir}", file=sys.stderr)
+        return 1
+
+    if not staged_files or not has_migration_changes(staged_files, migrations_dir):
         return 0
 
     return run_checks(migrations_dir)
