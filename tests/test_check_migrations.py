@@ -2,6 +2,7 @@
 
 from io import StringIO
 from pathlib import Path
+import sys
 
 import pytest
 from unittest.mock import Mock, patch
@@ -354,20 +355,20 @@ def test_no_revisions_only_empty_files(tmp_path: Path) -> None:
         build_migration_chain(directory)
 
 
-@patch("sys.argv")
-def test_run_checks_directory_not_found(mock_argv: Mock) -> None:
+def test_run_checks_directory_not_found() -> None:
     # given
     directory = Path("/nonexistent")
-    mock_argv.__getitem__.side_effect = ["alembic-check", str(directory)]
-    mock_argv.__len__.return_value = 2
+    argv = ["alembic-check", str(directory)]
+
     # when/then
-    with patch("sys.stderr", new=StringIO()) as mock_stderr:
-        assert main() == 1
-        assert "Migrations directory not found" in mock_stderr.getvalue()
+    with patch.object(sys, "argv", argv):
+        with patch("sys.stderr", new=StringIO()) as mock_stderr:
+            assert main() == 1
+            assert "Migrations directory does not exist" in mock_stderr.getvalue()
 
 
-@patch("alembic_check.check_migrations.build_migration_chain")
 @patch("alembic_check.check_migrations.validate_migration_chain")
+@patch("alembic_check.check_migrations.build_migration_chain")
 def test_run_checks(
     mock_build_migration_chain: Mock, mock_validate_migration_chain: Mock
 ) -> None:
@@ -382,8 +383,8 @@ def test_run_checks(
     assert run_checks(directory) == 0
 
 
-@patch("alembic_check.check_migrations.build_migration_chain")
 @patch("alembic_check.check_migrations.validate_migration_chain")
+@patch("alembic_check.check_migrations.build_migration_chain")
 def test_run_checks_error(
     mock_build_migration_chain: Mock, mock_validate_migration_chain: Mock
 ) -> None:

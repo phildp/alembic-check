@@ -224,8 +224,8 @@ def main() -> int:  # pragma: no cover
     migrations_dir = Path(args[0])
     staged_files = args[1:]
 
-    if not migrations_dir.exists():
-        print(f"Migrations directory not found: {migrations_dir}", file=sys.stderr)
+    if not migrations_dir.is_dir():
+        print(f"Migrations directory does not exist: {migrations_dir}", file=sys.stderr)
         return 1
 
     if not staged_files or not has_migration_changes(staged_files, migrations_dir):

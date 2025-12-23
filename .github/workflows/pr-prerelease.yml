@@ -26,4 +26,4 @@ jobs:
       - name: Run semantic-release (pre-release)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release --branches feat/*,fix/*
+        run: npx semantic-release --branches ${{ github.ref }}
