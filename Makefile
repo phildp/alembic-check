@@ -22,6 +22,9 @@ test: init ## Run tests
 pre-commit: init ## Run pre-commit
 	$(UV) run pre-commit run ${args}
 
+uv: init ## Run uv commands
+	$(UV) ${args}
+
 clean: ## Clean up
 	rm -rf .venv
 	rm -rf .pytest_cache

@@ -8,7 +8,7 @@ authors = [{ name = "Filippos Pavlopoulos", email = "philpavlop@gmail.com" }]
 
 [dependency-groups]
 dev = ["pytest>=8.4.2", "pytest-cov>=7.1.0"]
-lint = ["pre-commit>=4.3.0", "black>=25.11.0", "ruff>=0.15.11"]
+lint = ["pre-commit>=4.3.0", "ruff>=0.15.11"]
 
 [tool.semantic_release]
 version_variable = ["pyproject.toml:version"]
