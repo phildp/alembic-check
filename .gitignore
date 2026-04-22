@@ -40,7 +40,7 @@ htmlcov/
 
 # Distribution
 dist/
-build/ 
+build/
 
 # Coverage
 coverage.xml

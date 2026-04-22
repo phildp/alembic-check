@@ -85,7 +85,9 @@ def build_migration_chain(migrations_dir: Path) -> Dict[str, Optional[str]]:
 
             # Check for duplicate revisions
             if revision in migrations.keys():
-                raise DuplicateRevisionError(f"Duplicate revision '{revision}' found.")
+                raise DuplicateRevisionError(
+                    f"Duplicate revision '{revision}' found."
+                )
             if down_revision in migrations.values():
                 raise DuplicateDownRevisionError(
                     f"Duplicate down_revision '{down_revision}' found."
@@ -124,7 +126,9 @@ def validate_migration_chain(
     sorted_migrations = sorted(migrations.items(), key=lambda x: x[0])
 
     # Check for multiple initial migrations
-    initial_migrations = [rev for rev, down in sorted_migrations if down is None]
+    initial_migrations = [
+        rev for rev, down in sorted_migrations if down is None
+    ]
     if len(initial_migrations) > 1:
         raise MultipleInitialMigrationsError(
             f"Multiple initial migrations found (with None as down_revision): "
@@ -196,7 +200,9 @@ def run_checks(migrations_dir: Path) -> int:
         return 1
 
 
-def has_migration_changes(staged_files: List[str], migrations_dir: Path) -> bool:
+def has_migration_changes(
+    staged_files: List[str], migrations_dir: Path
+) -> bool:
     """
     Check if any staged files are in the migrations directory.
 
@@ -225,10 +231,15 @@ def main() -> int:  # pragma: no cover
     staged_files = args[1:]
 
     if not migrations_dir.is_dir():
-        print(f"Migrations directory does not exist: {migrations_dir}", file=sys.stderr)
+        print(
+            f"Migrations directory does not exist: {migrations_dir}",
+            file=sys.stderr,
+        )
         return 1
 
-    if not staged_files or not has_migration_changes(staged_files, migrations_dir):
+    if not staged_files or not has_migration_changes(
+        staged_files, migrations_dir
+    ):
         return 0
 
     return run_checks(migrations_dir)

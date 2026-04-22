@@ -79,9 +79,9 @@ down_revision = ''
                 read_migration_file(file_path)
         else:
             revision, down_revision = read_migration_file(file_path)
-            assert (revision, down_revision) == case[
-                "expected"
-            ], f"Failed test case: {case['name']}"
+            assert (revision, down_revision) == case["expected"], (
+                f"Failed test case: {case['name']}"
+            )
 
 
 def test_build_migration_chain_happy_path(tmp_path: Path) -> None:
@@ -251,7 +251,9 @@ def test_validate_migration_chain() -> None:
         if "raises" in case:
             with pytest.raises(case["raises"]) as exc:
                 validate_migration_chain(case["migrations"])
-            assert str(exc.value) == case["match"], f"Failed test case: {case['name']}"
+            assert str(exc.value) == case["match"], (
+                f"Failed test case: {case['name']}"
+            )
         else:
             res = validate_migration_chain(case["migrations"])
             assert res is None, f"Failed test case: {case['name']}"
@@ -315,7 +317,9 @@ def test_has_migration_changes():
 
     for case in test_cases:
         # when
-        result = has_migration_changes(case["staged_files"], case["migrations_dir"])
+        result = has_migration_changes(
+            case["staged_files"], case["migrations_dir"]
+        )
 
         # then
         assert result == case["expected"], f"Failed test case: {case['name']}"
@@ -335,7 +339,8 @@ def test_no_revisions_only_init(tmp_path: Path) -> None:
 
     # when/then
     with pytest.raises(
-        MigrationFileError, match="No migration files found in the migrations directory"
+        MigrationFileError,
+        match="No migration files found in the migrations directory",
     ):
         build_migration_chain(directory)
 
@@ -351,7 +356,9 @@ def test_no_revisions_only_empty_files(tmp_path: Path) -> None:
 """
     )
     # when/then
-    with pytest.raises(MigrationFileError, match="Could not find revision in empty.py"):
+    with pytest.raises(
+        MigrationFileError, match="Could not find revision in empty.py"
+    ):
         build_migration_chain(directory)
 
 
@@ -364,7 +371,9 @@ def test_run_checks_directory_not_found() -> None:
     with patch.object(sys, "argv", argv):
         with patch("sys.stderr", new=StringIO()) as mock_stderr:
             assert main() == 1
-            assert "Migrations directory does not exist" in mock_stderr.getvalue()
+            assert (
+                "Migrations directory does not exist" in mock_stderr.getvalue()
+            )
 
 
 @patch("alembic_check.check_migrations.validate_migration_chain")
