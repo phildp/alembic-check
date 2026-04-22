@@ -17,7 +17,7 @@ init: ## Initialize the virtual environment
 	@touch $(VENV)/bin/activate
 
 test: init ## Run tests
-	$(UV) run pytest ${args} --cov=alembic_check --cov-report=xml 
+	$(UV) run pytest ${args} --cov=alembic_check --cov-report=xml
 
 pre-commit: init ## Run pre-commit
 	$(UV) run pre-commit run ${args}
@@ -29,4 +29,4 @@ clean: ## Clean up
 	rm -rf .coverage
 	rm -rf htmlcov
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete 
+	find . -type f -name "*.pyc" -delete

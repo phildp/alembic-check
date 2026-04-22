@@ -1,13 +1,43 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.2.0
+  - repo: https://github.com/Yelp/detect-secrets.git
+    rev: v1.5.0
     hooks:
-      - id: black
-        language_version: python3 
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: (config/settings/test.py|/static|.html|local|README.md|uv.lock|tests/conftest.py|tests/test_check_migrations.py)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: debug-statements
+      - id: check-added-large-files
+      - id: check-docstring-first
+      - id: check-case-conflict
+      - id: check-builtin-literals
+      - id: mixed-line-ending
+      - id: check-json
+        files: \.(json)$
+      - id: check-toml
+        files: \.(toml)$
+      - id: check-yaml
+        files: \.(yml|yaml)$
+        args: [--allow-multiple-documents, --unsafe]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
+    rev: v0.15.5
     hooks:
-      - id: ruff
-        args: [--fix]
+      - id: ruff-check
+        args: ["--fix", "--ignore=S311"]
       - id: ruff-format
+      - id: ruff-check
+        name: ruff-check-no-fix
+        args: ["--ignore=I001"]
+        stages:
+          - manual
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2
+    hooks:
+      - id: pyupgrade
