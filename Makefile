@@ -11,7 +11,7 @@ help: ## Display this help.
 
 init: ## Initialize the virtual environment
 	$(PIP) install --upgrade pip
-	$(PIP) install uv==0.7.6
+	$(PIP) install -r uv-requirements.txt
 	$(UV) sync --all-groups
 	$(UV) pip install -e .
 	@touch $(VENV)/bin/activate
