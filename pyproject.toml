@@ -19,6 +19,9 @@ commit_message = "{version}\n\n{changelog}"
 changelog_sections = ["feature", "fix", "breaking"]
 changelog_exclude_commit_patterns = ["^chore:", "^docs:", "^test:", "^ci:"]
 
+[tool.setuptools.packages.find]
+include = ["alembic_check*"]
+
 [tool.ruff]
 line-length = 80
 target-version = "py38"
